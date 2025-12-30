@@ -14,7 +14,7 @@ pkg_check_modules(SDL3 REQUIRED sdl3)
 
 # Add include directories
 include_directories(${SDL3_INCLUDE_DIRS})
-add_library(sdlerror STATIC
+add_library(sdlerror SHARED
     src/error.c
 )
 
