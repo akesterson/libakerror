@@ -1,11 +1,12 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
-#include <SDL3/SDL.h>
+#if defined(AKERROR_USE_STDLIB) && AKERROR_USE_STDLIB == 1
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#endif
 
 #define MAX_ERROR_CONTEXT_STRING_LENGTH              1024
 #define MAX_ERROR_NAME_LENGTH                        64
@@ -15,7 +16,7 @@
 
 #define ERR_NULLPOINTER           1
 #define ERR_OUTOFBOUNDS           2
-#define ERR_SDL                   3
+#define ERR_API                   3
 #define ERR_ATTRIBUTE             4
 #define ERR_TYPE                  5
 #define ERR_KEY                   6                    
@@ -55,9 +56,11 @@ typedef struct
 #define ERROR_NOIGNORE __attribute__((warn_unused_result))
 
 typedef void (*ErrorUnhandledErrorHandler)(ErrorContext *errctx);
+typedef void (*ErrorLogFunction)(const char *f, ...);
 
 extern ErrorContext HEAP_ERROR[MAX_HEAP_ERROR];
 extern ErrorUnhandledErrorHandler error_handler_unhandled_error;
+extern ErrorLogFunction error_log_method;
 extern ErrorContext *__error_last_ignored;
 
 ErrorContext ERROR_NOIGNORE *heap_release_error(ErrorContext *ptr);
@@ -65,9 +68,10 @@ ErrorContext ERROR_NOIGNORE *heap_next_error();
 char *error_name_for_status(int status, char *name);
 void error_init();
 void error_default_handler_unhandled_error(ErrorContext *ptr);
+void error_default_logger(const char *f, ...);
 
 #define LOG_ERROR_WITH_MESSAGE(__err_context, __err_message)		\
-    SDL_Log("%s%s:%s:%d: %s %d (%s): %s", (char *)&__err_context->stacktracebuf, (char *)__FILE__, (char *)__func__, __LINE__, __err_message, __err_context->status, error_name_for_status(__err_context->status, NULL), __err_context->message); \
+    error_log_method("%s%s:%s:%d: %s %d (%s): %s", (char *)&__err_context->stacktracebuf, (char *)__FILE__, (char *)__func__, __LINE__, __err_message, __err_context->status, error_name_for_status(__err_context->status, NULL), __err_context->message); \
 
 #define LOG_ERROR(__err_context)		\
     LOG_ERROR_WITH_MESSAGE(__err_context, "");
@@ -85,7 +89,7 @@ void error_default_handler_unhandled_error(ErrorContext *ptr);
     if ( __err_context == NULL ) {					\
 	__err_context = heap_next_error();				\
 	if ( __err_context == NULL ) {					\
-	    SDL_Log("%s:%s:%d: Unable to pull an ErrorContext from the heap!", __FILE__, (char *)__func__, __LINE__); \
+	    error_log_method("%s:%s:%d: Unable to pull an ErrorContext from the heap!", __FILE__, (char *)__func__, __LINE__); \
 	    exit(1);							\
 	}								\
     }									\

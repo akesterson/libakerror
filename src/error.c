@@ -1,13 +1,31 @@
-#include "sdlerror.h"
-#include "stdlib.h"
+#include "akerror.h"
+#if defined(AKERROR_USE_STDLIB) && AKERROR_USE_STDLIB == 1
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#endif // AKERROR_USE_STDLIB
 
 ErrorContext __error_last_ditch;
 ErrorContext *__error_last_ignored;
 ErrorUnhandledErrorHandler error_handler_unhandled_error;
+ErrorLogFunction error_log_method = NULL;
 
 char __ERROR_NAMES[MAX_ERR_VALUE+1][MAX_ERROR_NAME_LENGTH];
 
 ErrorContext HEAP_ERROR[MAX_HEAP_ERROR];
+
+void error_default_logger(const char *fmt, ...)
+{
+#if defined(AKERROR_USE_STDLIB) && AKERROR_USE_STDLIB == 1
+    va_list ap;
+
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+#else
+    return;
+#endif
+}
 
 void error_init()
 {
@@ -21,12 +39,15 @@ void error_init()
 	__error_last_ignored = NULL;
 	memset((void *)&__error_last_ditch, 0x00, sizeof(ErrorContext));
 	__error_last_ditch.stacktracebufptr = (char *)&__error_last_ditch.stacktracebuf;
+	if ( error_log_method == NULL ) {
+	    error_log_method = &error_default_logger;
+	}
 	error_handler_unhandled_error = &error_default_handler_unhandled_error;
 	memset((void *)&__ERROR_NAMES[0], 0x00, ((MAX_ERR_VALUE+1) * MAX_ERROR_NAME_LENGTH));
 
 	error_name_for_status(ERR_NULLPOINTER, "Null Pointer Error");
 	error_name_for_status(ERR_OUTOFBOUNDS, "Out Of Bounds Error");
-	error_name_for_status(ERR_SDL, "SDL Library Error");
+	error_name_for_status(ERR_API, "API Error");
 	error_name_for_status(ERR_ATTRIBUTE, "Attribute Error");
 	error_name_for_status(ERR_TYPE, "Type Error");
 	error_name_for_status(ERR_KEY, "Key Error");

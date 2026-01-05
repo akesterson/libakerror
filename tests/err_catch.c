@@ -1,4 +1,4 @@
-#include "sdlerror.h"
+#include "akerror.h"
 
 ErrorContext *func2(void)
 {
@@ -31,6 +31,6 @@ int main(void)
     } CLEANUP {
     } PROCESS(errctx) {
     } HANDLE(errctx, ERR_NULLPOINTER) {
-      SDL_Log("Caught exception");
+      error_log_method("Caught exception");
     } FINISH_NORETURN(errctx);
 }

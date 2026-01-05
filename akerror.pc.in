@@ -3,8 +3,8 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${exec_prefix}/include
 
-Name: sdlerror
-Description: A C error handling library that relies on SDL3
+Name: akerror
+Description: AKLabs C error handling library
 Version: @PROJECT_VERSION@
 Cflags: -I${includedir}/
-Libs: -L${libdir} -lsdlerror
+Libs: -L${libdir} -lakerror

@@ -2,19 +2,17 @@
 
 This library provides a TRY/CATCH style exception handling mechanism for C. 
 
-# Dependencies
+# Why?
 
-This library depends on the `SDL3` library and `stdlib`. Specifically it uses the SDL_Log method from SDL3.
+There is nothing wrong with C as it is. This library does not claim to fix some problem with C. 
 
-# Installation
+Instead, this library implements a pragmatic and stylistic choice to assist the programmer in better handling errors in their programs. Vanilla C provides everything you need to do this out of the box, but this library makes it easier to avoid pointing certain guns at your foot, and when you do, it provides better context with those errors to help you more quickly recover.
 
-```bash
-cmake -S . -B build
-cmake --build build
-cmake --install build
-```
+Why? Because some programmers prefer to have the power of C with just a little bit of help in managing their errors.
 
-# Philosophy of Use
+# Library Architecture
+
+## Philosophy of Use
 
 This library has 6 guiding principles:
 
@@ -25,60 +23,130 @@ This library has 6 guiding principles:
 * Manipulating the call stack directly is error prone and dangerous
 * Declaring, capturing, and reacting to errors should be intuitive and no more difficult than managing return codes
 
-# Using the library
+## Lifecycle of an error in the AKError library
 
-## Simply
+TL;DR - `ErrorContext` objects are filled with error context information and bubbled up through nested control structures until they are handled or reach the top level, where an unhandled error halts program termination with a stack trace
 
-Include it
+1. At the point where an error occurs, an `ErrorContext` object is created and populated with information regarding the failure
+2. The ErrorContext is returned from the scope where the error was detected
+3. The ErrorContext enters a control structure provided by the AKError library through a series of macros that examine `ErrorContext` objects as they pass through
+4. The control structure checks to see if the `ErrorContext` has an error set, and if so, if there are any handlers in the current control structure that can handle it
+5. If the current control structure can handle the `ErrorContext`, it does so
+6. If the current control structure can not handle the `ErrorContext`, then the current control structure's cleanup code (if any) is executed, and the `ErrorContext` object is passed out of the current control structure to the parent control structure
+7. Steps 2-6 are repeated through as many control structures as are necessary to reach the first level of the control structure
+8. When the first level of the control structure is reached, if the `ErrorContext` has an error set in it, then the stack trace information in the `ErrorContext` object is used to print a stack trace using the configured logging function, and program termination is halted
 
-```c
-#include <sdlerror.h>
-```
+## What is in an Error Context
 
-Link against it
+The Error Context object is a simple object which contains a few things:
 
-```sh
-cc -lsdlerror
-```
+* A numeric error code
+* The name of the file in which the error occurred
+* The name of the function in which the error occurred
+* The line number in the file at which the error occurred
+* A character buffer containing a message about the error in question
 
-.. Done.
+The structure also contains housekeeping information for the library which are of no specific interest to the user. See [include/akerror.h](include/akerror.h) for more details.
 
-## CMake dependencies
+## What are the control structures
 
-Using pkg-config:
+The library is structured around a series of macros that construct `switch` statements that perform logic against an `ErrorContext` which exists in the current scope and has been initialized. These macros must be assembled in a specific order to produce a syntactically correct `switch` statement which performs correct operations against the `ErrorContext` to attempt operations, detect failures, perform cleanup operations, handle errors, and then exit a given scope in a success or failure state.
 
-```sh
-pkg-config sdlerror --cflags
-pkg-config sdlerror --ldflags
-```
+## Functions and Return Codes
 
-Using cmake:
-
-```cmake
-find_package(sdlerror REQUIRED)
-pkg_check_modules(sdlerror REQUIRED sdlerror)
-target_link_libraries(YOUR_TARGET PRIVATE sdlerror::sdlerror)
-```
-
-# Functions and Return Codes
-
-This library can perform tests on any function or expression that returns an integer value.
+This library can catch errors from any function or expression that returns an integer value, or from functions that return `ErrorContext *`. 
 
 Any function which uses the `PREPARE_ERROR` macro should have a return type of `ErrorContext *`. The macros within this library, when they detect an unhandled error, will attempt to pass up the unhandled error to the context of the previous function in the call stack. This allows for errors to propagate up through the call stack in the same way as exceptions. (For example, if you use traditional C error handling in a call stack of `a() -> b() -> c()`, and `c()` fails because it runs out of memory, `b()` will likely detect that error and return some error to `a()`, but it may or may not return the context of what failed and why. With this, you get that context all the way up in `a()` without knowing anything about `c()`.
 
-# Error codes
+## Error codes
 
-The library uses integer values to specify error codes inside of its context. These integer return codes are defined in `sdlerror.h` in the form of `ERR_xxxxx` where `xxxxx` is the name of the error code in question. See `sdlerror.h` for a list of defined errors and their descriptions. 
+The library uses integer values to specify error codes inside of its context. These integer return codes are defined in `akerror.h` in the form of `ERR_xxxxx` where `xxxxx` is the name of the error code in question. See `akerror.h` for a list of defined errors and their descriptions. 
 
-You can define additional error types by defining additional `ERR_xxxxx` values. Begin your error values at 128. Define a human-friendly name for the error with the `error_name_for_status` method:
+You can define additional error types by defining additional `ERR_xxxxx` values. Error values up to 127 are reserved by the library, so begin your error values at 128. Define a human-friendly name for the error with the `error_name_for_status` method:
 
 ```c
 error_name_for_status(129, "Some Error Code Description")
 ```
 
-When you add additional error codes, you need to define `-DMAX_ERR_VALUE=n` where `n` is the maximum error code you have defined.
+When you add additional error codes, you need to define `-DMAX_ERR_VALUE=n` to the compiler, where `n` is the maximum error code you have defined.
 
-# Setting up the error context
+# Installation
+
+```bash
+cmake -S . -B build
+cmake --build build
+cmake --install build
+```
+
+## Dependencies
+
+This library depends upon `stdlib`. If you don't want to link against stdlib, you must modify the library code to include headers and link against a library that provides the following:
+
+- `memset` function
+- `strncpy` function
+- `sprintf` function
+- `exit` function
+- `bool` type
+- `NULL` type
+
+... then you can compile it thusly:
+
+```
+cmake -S . -B build -DAKERROR_USE_STDLIB=OFF
+cmake --build build
+cmake --install build
+```
+
+# Using the library
+
+## Setting up your project
+
+Include it
+
+```c
+#include <akerror.h>
+```
+
+Link the library directly, or
+
+```sh
+cc -lakerror
+```
+
+Using pkg-config, or
+
+```sh
+pkg-config akerror --cflags
+pkg-config akerror --ldflags
+```
+
+Using cmake:
+
+```cmake
+find_package(akerror REQUIRED)
+pkg_check_modules(akerror REQUIRED akerror)
+target_link_libraries(YOUR_TARGET PRIVATE akerror::akerror)
+```
+
+
+## (Optional) Configuring the logging function
+
+The default logging function (used for logging stack traces on failure) defaults to a wrapper that calls `fprintf(stderr, f, ...)`. If you want to override this behavior, then set the error handler to a function with a printf-style signature:
+
+```
+void my_logger(const char *fmt, ...)
+{
+	/* ... do something */
+}
+
+
+/* set your custom error handler */
+error_log_method = &my_logger;
+	
+/* proceed to use the library */
+```
+
+## Setting Up the Error Context
 
 Before you can use any of these macros you must set up an error context inside of the current scope.
 
@@ -88,9 +156,7 @@ PREPARE_ERROR(errctx);
 
 This will create a ErrorContext structure inside of the current scope named `errctx` and initialize it. This structure is used for all operations of the library within the current scope. Attempting to use the library in a given scope before calling this will result in compile-time errors.
 
-# 
-
-# Attempting an operation
+## Attempting an Operation
 
 ```c
 ATTEMPT {
@@ -122,7 +188,7 @@ ATTEMPT {
 } // ...
 ```
 
-This will call assign the return value of the function in question to the ErrorContext previously prepared in the current scope. If the function returns an ErrorContext that indicates any type of error, the `ATTEMPT` block is immediately exited, and the `CLEANUP` block begins.
+This will assign the return value of the function in question to the ErrorContext previously prepared in the current scope. If the function returns an ErrorContext that indicates any type of error, the `ATTEMPT` block is immediately exited, and the `CLEANUP` block begins.
 
 ## Setting errors from functions or expressions returning integer
 
@@ -277,3 +343,4 @@ From bottom to top, we have:
 * Above that, a statement that the error was detected in the `CATCH()` statement at the same line
 * Above that, the `FINISH()` macro in `func2()` which detected an unhandled error and passed it out of the function
 * Above that, a reference to the line where the `FAIL()` macro set the error code and provided the message which is printed here
+
