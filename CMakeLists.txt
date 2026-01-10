@@ -4,7 +4,7 @@ project(akerror LANGUAGES C)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-set(AKERROR_USE_STDLIB 1 CACHE BOOL "Use C standard library for error logging")
+set(AKERROR_USE_STDLIB 1 CACHE BOOL "Use the C standard library")
 set(akerror_install_cmakedir "${CMAKE_INSTALL_LIBDIR}/cmake/akerror")
 
 find_package(PkgConfig REQUIRED)

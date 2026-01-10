@@ -154,7 +154,7 @@ void error_default_logger(const char *f, ...);
     snprintf((char *)__err_context->function, MAX_ERROR_FUNCTION_LENGTH, __func__); \
     __err_context->lineno = __LINE__;					\
     snprintf((char *)__err_context->message, MAX_ERROR_CONTEXT_STRING_LENGTH, __message, ## __VA_ARGS__); \
-    __err_context->stacktracebufptr += sprintf(__err_context->stacktracebufptr, "%s:%s:%d: %d (%s) : %s\n", (char *)__err_context->fname, (char *)__err_context->function, __err_context->lineno, __err_context->status, error_name_for_status(__err_context->status, NULL), __err_context->message);
+    __err_context->stacktracebufptr += snprintf(__err_context->stacktracebufptr, MAX_ERROR_STACKTRACE_BUF_LENGTH, "%s:%s:%d: %d (%s) : %s\n", (char *)__err_context->fname, (char *)__err_context->function, __err_context->lineno, __err_context->status, error_name_for_status(__err_context->status, NULL), __err_context->message);
 
 
 #define SUCCEED(__err_context)			\
