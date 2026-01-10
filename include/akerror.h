@@ -35,13 +35,13 @@
 
 extern char __ERROR_NAMES[MAX_ERR_VALUE+1][MAX_ERROR_NAME_LENGTH];
 
-#define MAX_HEAP_ERROR                    128
+#define MAX_ARRAY_ERROR                    128
 
 
 typedef struct
 {
     char message[MAX_ERROR_CONTEXT_STRING_LENGTH];
-    int heapid;
+    int arrayid;
     int status;
     bool handled;
     int refcount;
@@ -58,13 +58,13 @@ typedef struct
 typedef void (*ErrorUnhandledErrorHandler)(ErrorContext *errctx);
 typedef void (*ErrorLogFunction)(const char *f, ...);
 
-extern ErrorContext HEAP_ERROR[MAX_HEAP_ERROR];
+extern ErrorContext ARRAY_ERROR[MAX_ARRAY_ERROR];
 extern ErrorUnhandledErrorHandler error_handler_unhandled_error;
 extern ErrorLogFunction error_log_method;
 extern ErrorContext *__error_last_ignored;
 
-ErrorContext ERROR_NOIGNORE *heap_release_error(ErrorContext *ptr);
-ErrorContext ERROR_NOIGNORE *heap_next_error();
+ErrorContext ERROR_NOIGNORE *array_release_error(ErrorContext *ptr);
+ErrorContext ERROR_NOIGNORE *array_next_error();
 char *error_name_for_status(int status, char *name);
 void error_init();
 void error_default_handler_unhandled_error(ErrorContext *ptr);
@@ -78,7 +78,7 @@ void error_default_logger(const char *f, ...);
 
 #define RELEASE_ERROR(__err_context)				\
     if ( __err_context != NULL ) {				\
-	__err_context = heap_release_error(__err_context);	\
+	__err_context = array_release_error(__err_context);	\
     }
 
 #define PREPARE_ERROR(__err_context)					\
@@ -87,9 +87,9 @@ void error_default_logger(const char *f, ...);
 
 #define ENSURE_ERROR_READY(__err_context)				\
     if ( __err_context == NULL ) {					\
-	__err_context = heap_next_error();				\
+	__err_context = array_next_error();				\
 	if ( __err_context == NULL ) {					\
-	    error_log_method("%s:%s:%d: Unable to pull an ErrorContext from the heap!", __FILE__, (char *)__func__, __LINE__); \
+	    error_log_method("%s:%s:%d: Unable to pull an ErrorContext from the array!", __FILE__, (char *)__func__, __LINE__); \
 	    exit(1);							\
 	}								\
     }									\
@@ -172,7 +172,7 @@ void error_default_logger(const char *f, ...);
 #define DETECT(__err_context, __stmt)					\
     __stmt;								\
     if ( __err_context != NULL ) {					\
-	__err_context->stacktracebufptr += snprintf(__err_context->stacktracebufptr, MAX_ERROR_STACKTRACE_BUF_LENGTH, "%s:%s:%d: Detected error %d from heap (refcount %d)\n", (char *)__FILE__, (char *)__func__, __LINE__, __err_context->heapid, __err_context->refcount); \
+	__err_context->stacktracebufptr += snprintf(__err_context->stacktracebufptr, MAX_ERROR_STACKTRACE_BUF_LENGTH, "%s:%s:%d: Detected error %d from array (refcount %d)\n", (char *)__FILE__, (char *)__func__, __LINE__, __err_context->arrayid, __err_context->refcount); \
 	if ( __err_context->status != 0 ) {				\
 	    __err_context->stacktracebufptr += snprintf(__err_context->stacktracebufptr, MAX_ERROR_STACKTRACE_BUF_LENGTH, "%s:%s:%d\n", (char *)__FILE__, (char *)__func__, __LINE__); \
 	    break;							\

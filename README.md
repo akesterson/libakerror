@@ -325,10 +325,10 @@ Consider the `tests/err_trace.c` program which intentionally triggers this behav
 ```
 tests/err_trace.c:func2:7: 1 (Null Pointer Error) : This is a failure in func2
 tests/err_trace.c:func2:10
-tests/err_trace.c:func1:18: Detected error 0 from heap (refcount 1)
+tests/err_trace.c:func1:18: Detected error 0 from array (refcount 1)
 tests/err_trace.c:func1:18
 tests/err_trace.c:func1:21
-tests/err_trace.c:main:30: Detected error 0 from heap (refcount 1)
+tests/err_trace.c:main:30: Detected error 0 from array (refcount 1)
 tests/err_trace.c:main:30
 tests/err_trace.c:main:33: Unhandled Error 1 (Null Pointer Error): This is a failure in func2
 ```

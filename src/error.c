@@ -12,7 +12,7 @@ ErrorLogFunction error_log_method = NULL;
 
 char __ERROR_NAMES[MAX_ERR_VALUE+1][MAX_ERROR_NAME_LENGTH];
 
-ErrorContext HEAP_ERROR[MAX_HEAP_ERROR];
+ErrorContext ARRAY_ERROR[MAX_ARRAY_ERROR];
 
 void error_default_logger(const char *fmt, ...)
 {
@@ -31,10 +31,10 @@ void error_init()
 {
     static int inited = 0;
     if ( inited == 0 ) {
-	for (int i = 0; i < MAX_HEAP_ERROR; i++ ) {
-	    memset((void *)&HEAP_ERROR[i], 0x00, sizeof(ErrorContext));
-	    HEAP_ERROR[i].heapid = i;
-	    HEAP_ERROR[i].stacktracebufptr = (char *)&HEAP_ERROR[i].stacktracebuf;
+	for (int i = 0; i < MAX_ARRAY_ERROR; i++ ) {
+	    memset((void *)&ARRAY_ERROR[i], 0x00, sizeof(ErrorContext));
+	    ARRAY_ERROR[i].arrayid = i;
+	    ARRAY_ERROR[i].stacktracebufptr = (char *)&ARRAY_ERROR[i].stacktracebuf;
 	}
 	__error_last_ignored = NULL;
 	memset((void *)&__error_last_ditch, 0x00, sizeof(ErrorContext));
@@ -72,31 +72,31 @@ void error_default_handler_unhandled_error(ErrorContext *errctx)
   exit(errctx->status);
 }
 
-ErrorContext *heap_next_error()
+ErrorContext *array_next_error()
 {
-    for (int i = 0; i < MAX_HEAP_ERROR; i++ ) {
-	if ( HEAP_ERROR[i].refcount == 0 ) {
-	    return &HEAP_ERROR[i];
+    for (int i = 0; i < MAX_ARRAY_ERROR; i++ ) {
+	if ( ARRAY_ERROR[i].refcount == 0 ) {
+	    return &ARRAY_ERROR[i];
 	}
     }
     return (ErrorContext *)NULL;
 }
 
-ErrorContext *heap_release_error(ErrorContext *err)
+ErrorContext *array_release_error(ErrorContext *err)
 {
     int oldid = 0;
     if ( err == NULL ) {
 	ErrorContext *errctx = &__error_last_ditch;
-	FAIL_RETURN(errctx, ERR_NULLPOINTER, "heap_release_error got NULL context pointer");
+	FAIL_RETURN(errctx, ERR_NULLPOINTER, "array_release_error got NULL context pointer");
     }
     if ( err->refcount > 0 ) {
       err->refcount -= 1;
     }
     if ( err->refcount == 0 ) {
-	oldid = err->heapid;
+	oldid = err->arrayid;
 	memset(err, 0x00, sizeof(ErrorContext));
 	err->stacktracebufptr = (char *)&err->stacktracebuf;
-	err->heapid = oldid;
+	err->arrayid = oldid;
 	return NULL;
     }
     return err;
