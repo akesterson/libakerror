@@ -172,9 +172,9 @@ void error_default_logger(const char *f, ...);
 #define DETECT(__err_context, __stmt)					\
     __stmt;								\
     if ( __err_context != NULL ) {					\
-	__err_context->stacktracebufptr += sprintf(__err_context->stacktracebufptr, "%s:%s:%d: Detected error %d from heap (refcount %d)\n", (char *)__FILE__, (char *)__func__, __LINE__, __err_context->heapid, __err_context->refcount); \
+	__err_context->stacktracebufptr += snprintf(__err_context->stacktracebufptr, MAX_ERROR_STACKTRACE_BUF_LENGTH, "%s:%s:%d: Detected error %d from heap (refcount %d)\n", (char *)__FILE__, (char *)__func__, __LINE__, __err_context->heapid, __err_context->refcount); \
 	if ( __err_context->status != 0 ) {				\
-	    __err_context->stacktracebufptr += sprintf(__err_context->stacktracebufptr, "%s:%s:%d\n", (char *)__FILE__, (char *)__func__, __LINE__); \
+	    __err_context->stacktracebufptr += snprintf(__err_context->stacktracebufptr, MAX_ERROR_STACKTRACE_BUF_LENGTH, "%s:%s:%d\n", (char *)__FILE__, (char *)__func__, __LINE__); \
 	    break;							\
 	}								\
     }
@@ -219,7 +219,7 @@ void error_default_logger(const char *f, ...);
     };									\
     if ( __err_context != NULL ) {					\
 	if ( __err_context->handled == false && __pass_up == true ) {	\
-	    __err_context->stacktracebufptr += sprintf(__err_context->stacktracebufptr, "%s:%s:%d\n", (char *)__FILE__, (char *)__func__, __LINE__); \
+	    __err_context->stacktracebufptr += snprintf(__err_context->stacktracebufptr, MAX_ERROR_STACKTRACE_BUF_LENGTH, "%s:%s:%d\n", (char *)__FILE__, (char *)__func__, __LINE__); \
 	    return __err_context;					\
 	}								\
     }									\
