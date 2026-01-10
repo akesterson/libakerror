@@ -25,16 +25,16 @@ This library has 6 guiding principles:
 
 ## Lifecycle of an error in the AKError library
 
-TL;DR - `ErrorContext` objects are filled with error context information and bubbled up through nested control structures until they are handled or reach the top level, where an unhandled error halts program termination with a stack trace
+TL;DR - `akerr_ErrorContext` objects are filled with error context information and bubbled up through nested control structures until they are handled or reach the top level, where an unhandled error halts program termination with a stack trace
 
-1. At the point where an error occurs, an `ErrorContext` object is created and populated with information regarding the failure
-2. The ErrorContext is returned from the scope where the error was detected
-3. The ErrorContext enters a control structure provided by the AKError library through a series of macros that examine `ErrorContext` objects as they pass through
-4. The control structure checks to see if the `ErrorContext` has an error set, and if so, if there are any handlers in the current control structure that can handle it
-5. If the current control structure can handle the `ErrorContext`, it does so
-6. If the current control structure can not handle the `ErrorContext`, then the current control structure's cleanup code (if any) is executed, and the `ErrorContext` object is passed out of the current control structure to the parent control structure
+1. At the point where an error occurs, an `akerr_ErrorContext` object is created and populated with information regarding the failure
+2. The akerr_ErrorContext is returned from the scope where the error was detected
+3. The akerr_ErrorContext enters a control structure provided by the AKError library through a series of macros that examine `akerr_ErrorContext` objects as they pass through
+4. The control structure checks to see if the `akerr_ErrorContext` has an error set, and if so, if there are any handlers in the current control structure that can handle it
+5. If the current control structure can handle the `akerr_ErrorContext`, it does so
+6. If the current control structure can not handle the `akerr_ErrorContext`, then the current control structure's cleanup code (if any) is executed, and the `akerr_ErrorContext` object is passed out of the current control structure to the parent control structure
 7. Steps 2-6 are repeated through as many control structures as are necessary to reach the first level of the control structure
-8. When the first level of the control structure is reached, if the `ErrorContext` has an error set in it, then the stack trace information in the `ErrorContext` object is used to print a stack trace using the configured logging function, and program termination is halted
+8. When the first level of the control structure is reached, if the `akerr_ErrorContext` has an error set in it, then the stack trace information in the `akerr_ErrorContext` object is used to print a stack trace using the configured logging function, and program termination is halted
 
 ## What is in an Error Context
 
@@ -50,25 +50,25 @@ The structure also contains housekeeping information for the library which are o
 
 ## What are the control structures
 
-The library is structured around a series of macros that construct `switch` statements that perform logic against an `ErrorContext` which exists in the current scope and has been initialized. These macros must be assembled in a specific order to produce a syntactically correct `switch` statement which performs correct operations against the `ErrorContext` to attempt operations, detect failures, perform cleanup operations, handle errors, and then exit a given scope in a success or failure state.
+The library is structured around a series of macros that construct `switch` statements that perform logic against an `akerr_ErrorContext` which exists in the current scope and has been initialized. These macros must be assembled in a specific order to produce a syntactically correct `switch` statement which performs correct operations against the `akerr_ErrorContext` to attempt operations, detect failures, perform cleanup operations, handle errors, and then exit a given scope in a success or failure state.
 
 ## Functions and Return Codes
 
-This library can catch errors from any function or expression that returns an integer value, or from functions that return `ErrorContext *`. 
+This library can catch errors from any function or expression that returns an integer value, or from functions that return `akerr_ErrorContext *`. 
 
-Any function which uses the `PREPARE_ERROR` macro should have a return type of `ErrorContext *`. The macros within this library, when they detect an unhandled error, will attempt to pass up the unhandled error to the context of the previous function in the call stack. This allows for errors to propagate up through the call stack in the same way as exceptions. (For example, if you use traditional C error handling in a call stack of `a() -> b() -> c()`, and `c()` fails because it runs out of memory, `b()` will likely detect that error and return some error to `a()`, but it may or may not return the context of what failed and why. With this, you get that context all the way up in `a()` without knowing anything about `c()`.
+Any function which uses the `PREPARE_ERROR` macro should have a return type of `akerr_ErrorContext *`. The macros within this library, when they detect an unhandled error, will attempt to pass up the unhandled error to the context of the previous function in the call stack. This allows for errors to propagate up through the call stack in the same way as exceptions. (For example, if you use traditional C error handling in a call stack of `a() -> b() -> c()`, and `c()` fails because it runs out of memory, `b()` will likely detect that error and return some error to `a()`, but it may or may not return the context of what failed and why. With this, you get that context all the way up in `a()` without knowing anything about `c()`.
 
 ## Error codes
 
-The library uses integer values to specify error codes inside of its context. These integer return codes are defined in `akerror.h` in the form of `ERR_xxxxx` where `xxxxx` is the name of the error code in question. See `akerror.h` for a list of defined errors and their descriptions. 
+The library uses integer values to specify error codes inside of its context. These integer return codes are defined in `akerror.h` in the form of `AKERR_xxxxx` where `xxxxx` is the name of the error code in question. See `akerror.h` for a list of defined errors and their descriptions. 
 
-You can define additional error types by defining additional `ERR_xxxxx` values. Error values up to 127 are reserved by the library, so begin your error values at 128. Define a human-friendly name for the error with the `error_name_for_status` method:
+You can define additional error types by defining additional `AKERR_xxxxx` values. Error values up to 127 are reserved by the library, so begin your error values at 128. Define a human-friendly name for the error with the `error_name_for_status` method:
 
 ```c
 error_name_for_status(129, "Some Error Code Description")
 ```
 
-When you add additional error codes, you need to define `-DMAX_ERR_VALUE=n` to the compiler, where `n` is the maximum error code you have defined.
+When you add additional error codes, you need to define `-DAKERR_MAX_ERR_VALUE=n` to the compiler, where `n` is the maximum error code you have defined.
 
 # Installation
 
@@ -92,7 +92,7 @@ This library depends upon `stdlib`. If you don't want to link against stdlib, yo
 ... then you can compile it thusly:
 
 ```
-cmake -S . -B build -DAKERROR_USE_STDLIB=OFF
+cmake -S . -B build -DAKERR_USE_STDLIB=OFF
 cmake --build build
 cmake --install build
 ```
@@ -154,7 +154,7 @@ Before you can use any of these macros you must set up an error context inside o
 PREPARE_ERROR(errctx);
 ```
 
-This will create a ErrorContext structure inside of the current scope named `errctx` and initialize it. This structure is used for all operations of the library within the current scope. Attempting to use the library in a given scope before calling this will result in compile-time errors.
+This will create a akerr_ErrorContext structure inside of the current scope named `errctx` and initialize it. This structure is used for all operations of the library within the current scope. Attempting to use the library in a given scope before calling this will result in compile-time errors.
 
 ## Attempting an Operation
 
@@ -172,15 +172,15 @@ ATTEMPT {
 
 `PROCESS(errctx) { ... }` is the block within which you will handle any errors that were caught inside of the `ATTEMPT` block. See "Handling Errors" below.
 
-`FINISH(errctx, true)` terminates the attempt operation. The `FINISH` macro takes two arguments: the name of the ErrorContext, and a boolean regarding whether or not to pass unhandled errors up to the calling function. Unless you have a good reason not to, this should be true.
+`FINISH(errctx, true)` terminates the attempt operation. The `FINISH` macro takes two arguments: the name of the akerr_ErrorContext, and a boolean regarding whether or not to pass unhandled errors up to the calling function. Unless you have a good reason not to, this should be true.
 
 # Capturing errors
 
 Inside of an `ATTEMPT` block, any operation which could generate or represent an error should be wrapped in one of several macros.
 
-## Capturing errors from functions which return ErrorContext *
+## Capturing errors from functions which return akerr_ErrorContext *
 
-For functions that return `ErrorContext *`, you should use the `CATCH` macro.
+For functions that return `akerr_ErrorContext *`, you should use the `CATCH` macro.
 
 ```c
 ATTEMPT {
@@ -188,7 +188,7 @@ ATTEMPT {
 } // ...
 ```
 
-This will assign the return value of the function in question to the ErrorContext previously prepared in the current scope. If the function returns an ErrorContext that indicates any type of error, the `ATTEMPT` block is immediately exited, and the `CLEANUP` block begins.
+This will assign the return value of the function in question to the akerr_ErrorContext previously prepared in the current scope. If the function returns an akerr_ErrorContext that indicates any type of error, the `ATTEMPT` block is immediately exited, and the `CLEANUP` block begins.
 
 ## Setting errors from functions or expressions returning integer
 
@@ -198,7 +198,7 @@ Here is an example of checking for a NULL pointer
 
 ```c
 ATTEMPT {
-    FAIL_ZERO_BREAK(errctx, (somePointer == NULL), ERR_NULLPOINTER, "Someone gave me a NULL pointer")
+    FAIL_ZERO_BREAK(errctx, (somePointer == NULL), AKERR_NULLPOINTER, "Someone gave me a NULL pointer")
 } // ...
 ```
 
@@ -206,7 +206,7 @@ Here is an example of checking for two strings that are not equal
 
 ```c
 ATTEMPT {
-    FAIL_NONZERO_BREAK(errctx, strcmp("not", "equal"), ERR_VALUE, "Strings are not equal")
+    FAIL_NONZERO_BREAK(errctx, strcmp("not", "equal"), AKERR_VALUE, "Strings are not equal")
 } // ...
 ```
 
@@ -222,7 +222,7 @@ In order to handle a specific error code, use the `HANDLE` macro.
 
 ```c
 } PROCESS(errctx) {
-} HANDLE(errctx, ERR_NULLPOINTER) {
+} HANDLE(errctx, AKERR_NULLPOINTER) {
     // Something is complaining about a null pointer error. Do something about it.
 } // ...
 ```
@@ -233,35 +233,35 @@ In order to handle a group of related errors that all require the same failure b
 
 ```c
 } PROCESS(errctx) {
-} HANDLE(errctx, ERR_IO) {
-} HANDLE_GROUP(errctx, ERR_KEY) {
-} HANDLE_GROUP(errctx, ERR_INDEX) {
+} HANDLE(errctx, AKERR_IO) {
+} HANDLE_GROUP(errctx, AKERR_KEY) {
+} HANDLE_GROUP(errctx, AKERR_INDEX) {
     // error handling code goes here
 }
 ```
 
 This creates a fallthrough mechanism where all 3 errors get the same error handling code. Note that while the cases fall through, you can still (if desired) put some code specific to each error in that error's `HANDLE` or `HANDLE_GROUP` block; but this is not required, only the final handler needs to get any code.
 
-The fallthrough behavior stops as soon as another `HANDLE` macro is encountered. For example, in this example, `ERR_IO`, `ERR_KEY` and `ERR_INDEX` are all handled as a group, but `ERR_RELATIONSHIP` is not.
+The fallthrough behavior stops as soon as another `HANDLE` macro is encountered. For example, in this example, `AKERR_IO`, `AKERR_KEY` and `AKERR_INDEX` are all handled as a group, but `AKERR_RELATIONSHIP` is not.
 
 ```c
 } PROCESS(errctx) {
-} HANDLE(errctx, ERR_IO) {
-} HANDLE_GROUP(errctx, ERR_KEY) {
-} HANDLE_GROUP(errctx, ERR_INDEX) {
+} HANDLE(errctx, AKERR_IO) {
+} HANDLE_GROUP(errctx, AKERR_KEY) {
+} HANDLE_GROUP(errctx, AKERR_INDEX) {
     // This code handles 3 error cases
-} HANDLE(errctx, ERR_RELATIONSHIP) {
+} HANDLE(errctx, AKERR_RELATIONSHIP) {
     // This code handles 1 error case
 }
 ```
 
-# Returning success or failure from functions returning ErrorContext *
+# Returning success or failure from functions returning akerr_ErrorContext *
 
-If at all possible, when using this library, your functiions should return `ErrorContext *`. When returning from such functions, you should use the `SUCCEED_RETURN` and `FAIL_RETURN` macros.
+If at all possible, when using this library, your functiions should return `akerr_ErrorContext *`. When returning from such functions, you should use the `SUCCEED_RETURN` and `FAIL_RETURN` macros.
 
 ## SUCCEED_RETURN
 
-This macro is used when your function has reached the end of its happy code path and is prepared to exit successfully. This sets the ErrorContext to a successful state and exits the function.
+This macro is used when your function has reached the end of its happy code path and is prepared to exit successfully. This sets the akerr_ErrorContext to a successful state and exits the function.
 
 ```c
 PREPARE_ERROR(errctx);
@@ -281,7 +281,7 @@ The function allows you to provide printf-style variable arguments to provide a 
 
 ```c
 PREPARE_ERROR(errctx);
-FAIL_RETURN(ERR_BEHAVIOR, "Something went horribly wrong!")
+FAIL_RETURN(AKERR_BEHAVIOR, "Something went horribly wrong!")
 ```
 
 ## Conditionally failing and returning
@@ -290,22 +290,22 @@ In addition to `FAIL_RETURN` you can also test for zero or non-zero conditions, 
 
 ```c
 PREPARE_ERROR(errctx);
-FAIL_ZERO_RETURN(errctx, (somePointer == NULL), ERR_NULLPOINTER, "Someone gave me a NULL pointer")
+FAIL_ZERO_RETURN(errctx, (somePointer == NULL), AKERR_NULLPOINTER, "Someone gave me a NULL pointer")
 ```
 
 ```c
 PREPARE_ERROR(errctx);
-FAIL_NONZERO_RETURN(errctx, strcmp("not", "equal"), ERR_VALUE, "Strings are not equal")
+FAIL_NONZERO_RETURN(errctx, strcmp("not", "equal"), AKERR_VALUE, "Strings are not equal")
 ```
 
 # Uncaught errors
 
 ## Ensuring that all error codes are captured
 
-Any function which returns `ErrorContext *` should also be marked with `ERROR_NOIGNORE`.
+Any function which returns `akerr_ErrorContext *` should also be marked with `ERROR_NOIGNORE`.
 
 ```c
-ErrorContext ERROR_NOIGNORE *f(...);
+akerr_ErrorContext ERROR_NOIGNORE *f(...);
 ```
 
 This will cause a compile-time error if the return value of such a function is not used. "Used" here means assigned to a variable - it does not necessarily mean that the value is checked. However assuming that such functions are called inside of `ATTEMPT { ... }` blocks, it is safe to assume that such returns will be caught with `CATCH(...)`; therefore this error is a generally effective safeguard against careless coding where errors are not checked.

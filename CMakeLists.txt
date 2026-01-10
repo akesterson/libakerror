@@ -4,7 +4,7 @@ project(akerror LANGUAGES C)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-set(AKERROR_USE_STDLIB 1 CACHE BOOL "Use the C standard library")
+set(AKERR_USE_STDLIB 1 CACHE BOOL "Use the C standard library")
 set(akerror_install_cmakedir "${CMAKE_INSTALL_LIBDIR}/cmake/akerror")
 
 find_package(PkgConfig REQUIRED)
@@ -13,7 +13,7 @@ add_library(akerror STATIC
 )
 
 target_compile_definitions(akerror
-    PUBLIC AKERROR_USE_STDLIB=${AKERROR_USE_STDLIB}
+    PUBLIC AKERR_USE_STDLIB=${AKERR_USE_STDLIB}
 )
 
 add_executable(test_err_catch tests/err_catch.c)
