@@ -1,7 +1,7 @@
 #ifndef _AKERR_H_
 #define _AKERR_H_
 
-#if defined(AKERR_USE_STDLIB) && AKERR_USE_STDLIB == 1
+#if (defined(AKERR_USE_STDLIB) && AKERR_USE_STDLIB == 1) || (!defined(AKERR_USE_STDLIB))
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>

@@ -27,7 +27,7 @@ This library has 6 guiding principles:
 
 TL;DR - `akerr_ErrorContext` objects are filled with error context information and bubbled up through nested control structures until they are handled or reach the top level, where an unhandled error halts program termination with a stack trace
 
-1. At the point where an error occurs, an `akerr_ErrorContext` object is created and populated with information regarding the failure
+1. At the point where an error occurs, an `akerr_ErrorContext` object is initialized and populated with information regarding the failure
 2. The akerr_ErrorContext is returned from the scope where the error was detected
 3. The akerr_ErrorContext enters a control structure provided by the AKError library through a series of macros that examine `akerr_ErrorContext` objects as they pass through
 4. The control structure checks to see if the `akerr_ErrorContext` has an error set, and if so, if there are any handlers in the current control structure that can handle it
@@ -172,7 +172,8 @@ ATTEMPT {
 
 `PROCESS(errctx) { ... }` is the block within which you will handle any errors that were caught inside of the `ATTEMPT` block. See "Handling Errors" below.
 
-`FINISH(errctx, true)` terminates the attempt operation. The `FINISH` macro takes two arguments: the name of the akerr_ErrorContext, and a boolean regarding whether or not to pass unhandled errors up to the calling function. Unless you have a good reason not to, this should be true.
+`FINISH(errctx, true)` terminates the attempt operation. The `FINISH` macro takes two arguments: the name of the akerr_ErrorContext, and a boolean regarding whether or not to pass unhandled errors up to the calling function. Unless you are inside of your `main()` method, this should be true. Inside of your `main()` method, call `FINISH_NORETURN(errctx)` instead.
+
 
 # Capturing errors
 
